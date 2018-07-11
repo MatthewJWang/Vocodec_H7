@@ -53,6 +53,7 @@ extern const float shaper1[SHAPER1_TABLE_SIZE];
 #define     N_SVF               0 + 32*N_BUTTERWORTH
 #define     N_SVFE              0
 #define     N_HIGHPASS          1
+#define 	N_FORMANTSHIFTER	2
 #define     N_DELAY             0 + (14 * N_NREV) + (3 * N_PRCREV)
 #define     N_DELAYL            0 + (1 * N_STIFKARP) + (1 * N_PLUCK)
 #define     N_DELAYA            0 + (1 * N_PRCREV) + (1 * N_STIFKARP)
@@ -84,7 +85,7 @@ extern const float shaper1[SHAPER1_TABLE_SIZE];
 
 #define INC_DELAY           (N_DELAY || N_DELAYL || N_DELAYA)
 
-#define INC_FILTER          (N_BUTTERWORTH || N_ONEPOLE || N_TWOPOLE || N_ONEZERO || N_TWOZERO || N_POLEZERO || N_BIQUAD || N_SVF || N_SVFE || N_HIGHPASS)
+#define INC_FILTER          (N_BUTTERWORTH || N_ONEPOLE || N_TWOPOLE || N_ONEZERO || N_TWOZERO || N_POLEZERO || N_BIQUAD || N_SVF || N_SVFE || N_HIGHPASS || N_FORMANTSHIFTER)
 
 #define INC_OSCILLATOR      (N_PHASOR || N_SAWTOOTH || N_CYCLE || N_TRIANGLE || N_SQUARE || N_NOISE)
 

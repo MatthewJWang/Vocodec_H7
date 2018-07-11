@@ -696,6 +696,26 @@ typedef struct _tAtkDtk
     float threshold;
 } tAtkDtk;
 
+#define THRESH 10e-10
+#define ILL_THRESH 10e-10
+#define LOCKHART_RL 7.5e3
+#define LOCKHART_R 15e3
+#define LOCKHART_VT 26e-3
+#define LOCKHART_Is 10e-16
+#define LOCKHART_A 2.0*LOCKHART_RL/LOCKHART_R
+#define LOCKHART_B (LOCKHART_R+2.0*LOCKHART_RL)/(LOCKHART_VT*LOCKHART_R)
+#define LOCKHART_D (LOCKHART_RL*LOCKHART_Is)/LOCKHART_VT
+#define VT_DIV_B LOCKHART_VT/LOCKHART_B
+
+typedef struct _tLockhartWavefolder
+{
+    double Ln1;
+    double Fn1;
+    double xn1;
+    
+    void (*sampleRateChanged)(struct _tLockhartWavefolder *self);
+} tLockhartWavefolder;
+
 #define MAXOVERLAP 32
 #define INITVSTAKEN 64
 
@@ -712,6 +732,37 @@ typedef struct tEnv
     int windowSize, hopSize;
     int x_allocforvs;               /* extra buffer for DSP vector size */
 } tEnv;
+
+#define FORD 10
+#define CBSIZE 2048
+
+typedef struct _tFormantShifter
+{
+    int ford;
+    float falph;
+    float flamb;
+    float fk[FORD];
+    float fb[FORD];
+    float fc[FORD];
+    float frb[FORD];
+    float frc[FORD];
+    float fsig[FORD];
+    float fsmooth[FORD];
+    float fhp;
+    float flp;
+    float flpa;
+    float fbuff[FORD][CBSIZE];
+    float ftvec[FORD];
+    float fmute;
+    float fmutealph;
+    unsigned int cbiwr;
+    float cbi[CBSIZE];
+    float cbf[CBSIZE];
+    float cbo [CBSIZE];
+    unsigned int cbord;
+    
+    void (*sampleRateChanged)(struct _tFormantShifter *self);
+} tFormantShifter;
 
 
 // ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ //
@@ -735,6 +786,7 @@ void     tNeuronSampleRateChanged(tNeuron* n);
 void     tCompressorSampleRateChanged(tCompressor* n);
 void     tButterworthSampleRateChanged(tButterworth* n);
 
+void     tTalkboxSampleRateChanged(tVocoder* n);
 void     tVocoderSampleRateChanged(tVocoder* n);
 
 void     t808SnareSampleRateChanged(t808Snare* n);
@@ -743,6 +795,9 @@ void     t808CowbellSampleRateChanged(t808Cowbell* n);
 
 void     tSOLADSampleRateChanged(tSOLAD* n);
 void     tSNACSampleRateChanged(tSNAC* n);
+
+void     tLockhartWavefolderSampleRateChanged(tLockhartWavefolder* n);
+void     tFormantShifterSampleRateChanged(tFormantShifter* n);
 
 typedef enum OOPSRegistryIndex
 {
@@ -761,6 +816,7 @@ typedef enum OOPSRegistryIndex
     T_SVF,
     T_SVFE,
     T_HIGHPASS,
+    T_FORMANTSHIFTER,
     T_DELAY,
     T_DELAYL,
     T_DELAYA,
@@ -786,6 +842,7 @@ typedef enum OOPSRegistryIndex
     T_SOLAD,
     T_SNAC,
     T_ATKDTK,
+    T_LOCKHARTWAVEFOLDER,
     T_ENV,
     T_INDEXCNT
 }OOPSRegistryIndex;
@@ -860,6 +917,10 @@ typedef struct _OOPS
         
 #if N_HIGHPASS
     tHighpass          tHighpassRegistry        [N_HIGHPASS];
+#endif
+    
+#if N_FORMANTSHIFTER
+    tFormantShifter    tFormantShifterRegistry  [N_FORMANTSHIFTER];
 #endif
         
 #if N_DELAY
@@ -943,6 +1004,10 @@ typedef struct _OOPS
     
 #if N_ATKDTK
     tAtkDtk            tAtkDtkRegistry   [N_ATKDTK];
+#endif
+    
+#if N_LOCKHARTWAVEFOLDER
+    tLockhartWavefolder tLockhartWavefolderRegistry [N_LOCKHARTWAVEFOLDER];
 #endif
     
 #if N_808SNARE

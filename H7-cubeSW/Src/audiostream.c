@@ -41,7 +41,8 @@ tSOLAD* sola;
 tEnv* env;
 
 tHighpass* hp;
-
+tFormantShifter* fs;
+tFormantShifter* fs2;
 float inBuffer[4096];
 float outBuffer[4096];
 
@@ -137,7 +138,8 @@ void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTy
 	{
 		notePeriods[i] = 1.0f / OOPS_midiToFrequency(i);
 	}
-
+	fs = tFormantShifterInit();
+	fs2 = tFormantShifterInit();
 	//now to send all the necessary messages to the codec
 	AudioCodec_init(hi2c);
 
@@ -186,7 +188,7 @@ void audioFrame(uint16_t buffer_offset)
 	tSawtoothSetFreq(osc[0], 220.0f);
 	for (int cc=0; cc < numSamples; cc++)
 	{
-		inBuffer[(cur_read_block*numSamples)+cc] = (float) (audioInBuffer[buffer_offset+(cc*2)] * INV_TWO_TO_15);
+		inBuffer[(cur_read_block*numSamples)+cc] = (float) (audioInBuffer[buffer_offset+(cc*2)] * INV_TWO_TO_15 * 4);
 		//inBuffer[(cur_read_block*numSamples)+cc] = tSawtoothTick(osc[0]);
 	}
 
@@ -211,7 +213,9 @@ void audioFrame(uint16_t buffer_offset)
 	//setTimeConstant((knobs[1] * INV_TWO_TO_12) * 20.0f + 480.0f);
 
 	//  tSOLAD pshift works
-	tSOLAD_ioSamples(sola, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
+	tFormantShifter_ioSamples(fs, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples, adcVals[1]*INV_TWO_TO_16*4.0f-2.0f);
+	tFormantShifter_ioSamples(fs2, &outBuffer[cur_write_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples, adcVals[3]*INV_TWO_TO_16*4.0f-2.0f);
+	//tSOLAD_ioSamples(sola, &outBuffer[cur_write_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
 
 	for (int cc=0; cc < numSamples; cc++)
 	{
