@@ -110,6 +110,8 @@ float       tHighpassTick      (tHighpass*  const, float x);
 void        tHighpassSetFreq   (tHighpass*  const, float freq);
 float       tHighpassGetFreq   (tHighpass*  const);
 
-
+tFormantShifter*    tFormantShifterInit     (void);
+float       tFormantShifterTick    (tFormantShifter* const, float input);
+void        tFormantShifter_ioSamples   (tFormantShifter* const, float* in, float* out, int size, float fwarp);
 
 #endif  // OOPSFILTER_H_INCLUDED

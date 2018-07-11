@@ -52,14 +52,14 @@ typedef enum BOOL {
 void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTypeDef* hsaiIn, RNG_HandleTypeDef* hrand, uint16_t* myADCArray)
 { 
 	// Initialize the audio library. OOPS.
-	OOPSInit(SAMPLE_RATE, &randomNumber);
+	OOPSInit(SAMPLE_RATE, HALF_BUFFER_SIZE, &randomNumber);
 	
 	//now to send all the necessary messages to the codec
 	AudioCodec_init(hi2c);
 
 	HAL_Delay(100);
 
-	poly = tPolyphonicHandlerInit();
+	poly = tPolyInit();
 	adcVals = myADCArray;
 	for (int i = 0; i < NUM_OSC; i++)
 	{
@@ -142,7 +142,7 @@ float audioTickL(float audioIn)
 
 	for (int i = 0; i < NUM_OSC; i++)
 	{
-		if (tPolyphonicHandlerGetMidiNote(poly, i)->on == OTRUE)
+		if (tPolyGetMidiNote(poly, i)->on == OTRUE)
 		{
 			sample += tSawtoothTick(osc[i]);
 		}

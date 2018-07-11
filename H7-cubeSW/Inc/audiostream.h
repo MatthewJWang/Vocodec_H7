@@ -54,7 +54,7 @@ extern uint8_t doAudio;
 extern float detuneAmounts[NUM_OSC];
 extern float myVol;
 tSawtooth* osc[NUM_OSC];
-tPolyphonicHandler* poly;
+tPoly* poly;
 tTalkbox* vocoder;
 
 

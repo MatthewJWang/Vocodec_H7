@@ -86,7 +86,7 @@ void ProcessReceivedMidiDatas(uint32_t myLength)
 					velocity = pack.evnt2;
 				
 					myVol = 0.0f;
-					tPolyphonicHandlerNoteOff(poly, key);
+					tPolyNoteOff(poly, key);
 
 					break;
 				case (0x90): // Note On
@@ -96,17 +96,17 @@ void ProcessReceivedMidiDatas(uint32_t myLength)
 					if (!velocity)
 					{
 						//myVol = 0.0f;
-						tPolyphonicHandlerNoteOff(poly, key);
+						tPolyNoteOff(poly, key);
 					}
 					else
 					{
 						//myVol = 1.0f;
 
-						tPolyphonicHandlerNoteOn(poly, key, velocity);
+						tPolyNoteOn(poly, key, velocity);
     
 						for (int i = 0; i < NUM_VOICES; i++)
 						{
-								tSawtoothSetFreq(osc[i], OOPS_midiToFrequency(tPolyphonicHandlerGetMidiNote(poly, i)->pitch));
+								tSawtoothSetFreq(osc[i], OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch));
 						}
 
 					}
