@@ -110,7 +110,7 @@ void MX_USB_HOST_Init(void)
 
 	USBH_RegisterClass(&hUsbHostFS, USBH_MIDI_CLASS);
 
-USBH_Start(&hUsbHostFS);
+   USBH_Start(&hUsbHostFS);
 
   /* USER CODE BEGIN USB_HOST_Init_PostTreatment */
   HAL_PWREx_EnableUSBVoltageDetector();

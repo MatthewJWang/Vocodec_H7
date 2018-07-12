@@ -13,7 +13,7 @@
 ALIGN_32BYTES (int16_t audioOutBuffer[AUDIO_BUFFER_SIZE] __ATTR_RAM_D2);
 ALIGN_32BYTES (int16_t audioInBuffer[AUDIO_BUFFER_SIZE] __ATTR_RAM_D2);
 
-float detuneAmounts[NUM_OSC];
+float detuneAmounts[NUM_VOICES];
 
 #define TOTAL_BUFFERS 4
 
@@ -152,7 +152,7 @@ void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTy
 
 	poly = tPolyInit();
 
-	for (int i = 0; i < NUM_OSC; i++)
+	for (int i = 0; i < NUM_VOICES; i++)
 	{
 		osc[i] = tSawtoothInit();
 	}
@@ -174,7 +174,6 @@ void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTy
 
 	setTimeConstant(timeConstant);
 
-
 }
 
 
@@ -188,8 +187,6 @@ void audioFrame()
 	buttonCheck();
 
 	uint16_t i = 0;
-	int16_t current_sample = 0;
-	tSawtoothSetFreq(osc[0], 187.5f * 4.0f);
 
 	for (int cc=0; cc < numSamples; cc++)
 	{
@@ -258,19 +255,23 @@ void audioFrame()
 			audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (tHighpassTick(hp, outBuffer[cur_write_block*numSamples+cc]) * TWO_TO_15);
 		}
 	}
-	else if (mode == VocoderMode)
+	if (mode == VocoderMode)
 	{
-		int16_t current_sample= 0;
-		for (i = 0; i < (HALF_BUFFER_SIZE); i++)
+		float sample = 0;
+		for (int cc=0; cc < numSamples; cc++)
 		{
-			if ((i & 1) == 0) {
-				current_sample = (int16_t)(audioTickL((float) (audioInBuffer[buffer_offset + i] * INV_TWO_TO_15)) * TWO_TO_15);
-			}
-			else
+			for (int i = 0; i < NUM_VOICES; i++)
 			{
-				//current_sample = (int16_t)(audioTickR((float) (audioInBuffer[buffer_offset + i] * INV_TWO_TO_15)) * TWO_TO_15);
+				if (tPolyGetMidiNote(poly, i)->on == OTRUE)
+				{
+					sample += tSawtoothTick(osc[i]);
+				}
 			}
-			audioOutBuffer[buffer_offset + i] = current_sample;
+			sample *= .25f;
+
+			sample = tTalkboxTick(vocoder, sample, inBuffer[(cur_read_block*numSamples)+cc]);
+			sample = OOPS_softClip(sample, 0.98f);
+			audioOutBuffer[buffer_offset + (cc*2)]  = (int16_t)(sample * TWO_TO_15);
 		}
 	}
 
@@ -292,30 +293,7 @@ float rightInput = 0.0f;
 float audioTickL(float audioIn) 
 {
 	sample = 0.0f;
-	/*
-	for (int i = 0; i < 4; i++)
-	{
-		tCycleSetFreq(mySine[i], ((((float)adcVals[i]) * INV_TWO_TO_16) * 1000.0f) + 40.0f);
 
-	}
-	*/
-
-	for (int i = 0; i < NUM_OSC; i++)
-	{
-		if (tPolyGetMidiNote(poly, i)->on == OTRUE)
-		{
-			sample += tSawtoothTick(osc[i]);
-		}
-	}
-
-	//sample = tSawtoothTick(osc[0]);
-	//sample = audioIn;
-	sample *= .25f;
-
-	sample = tTalkboxTick(vocoder, sample, audioIn);
-	sample = OOPS_softClip(sample, 0.98f);
-	//sample *= myVol;
-	//sample = audioIn;
 	return sample;
 }
 

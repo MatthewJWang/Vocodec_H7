@@ -33,9 +33,6 @@
 
 #include "OOPS.h"
 
-#define NUM_OSC 			4
-#define INV_NUM_OSC 		1.0f/NUM_OSC
-
 #define NUM_VOICES 8
 
 #define AUDIO_FRAME_SIZE      512
@@ -52,12 +49,12 @@ uint32_t buttonPressed[NUM_BUTTONS];
 extern float testFreq;
 extern uint8_t buttonAPressed;
 extern uint8_t doAudio;
-extern float detuneAmounts[NUM_OSC];
+extern float detuneAmounts[NUM_VOICES];
 extern float myVol;
 extern uint16_t buffer_offset;
 extern int16_t audioOutBuffer[AUDIO_BUFFER_SIZE];
 extern float noteperiod;
-tSawtooth* osc[NUM_OSC];
+tSawtooth* osc[NUM_VOICES];
 tPoly* poly;
 tTalkbox* vocoder;
 

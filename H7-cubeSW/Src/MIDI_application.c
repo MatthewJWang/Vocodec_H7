@@ -85,7 +85,7 @@ void ProcessReceivedMidiDatas(uint32_t myLength)
 				
 					myVol = 0.0f;
 					tPolyNoteOff(poly, key);
-
+					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
 					break;
 				case (0x90): // Note On
 					key = pack.evnt1;
@@ -95,19 +95,19 @@ void ProcessReceivedMidiDatas(uint32_t myLength)
 					{
 						//myVol = 0.0f;
 						tPolyNoteOff(poly, key);
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
 					}
 					else
 					{
-						//myVol = 1.0f;
-
 						tPolyNoteOn(poly, key, velocity);
-						noteperiod = 1.0f / OOPS_midiToFrequency(key);
 						for (int i = 0; i < NUM_VOICES; i++)
 						{
-								float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
-								tSawtoothSetFreq(osc[i], freq);
+							float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
+							tSawtoothSetFreq(osc[i], freq);
 						}
 
+
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET);    //LED3
 					}
 
 
@@ -187,7 +187,7 @@ void ProcessReceivedMidiDatas(uint32_t myLength)
 							break;
 					}
 
-					HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);    //LED3
+
           break;
 				case (0xC0): // Program Change
 					break;

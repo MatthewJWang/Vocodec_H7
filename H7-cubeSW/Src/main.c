@@ -252,6 +252,9 @@ int main(void)
 		  counter = 0;
 	  }
 
+	  MX_USB_HOST_Process();
+
+#if 0
 	  GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
 	  GFXsetCursor(&theGFX, 0,13);
 	  GFXwrite(&theGFX,'M');
@@ -319,9 +322,10 @@ int main(void)
 		}
 		counter++;
 		*/
+#endif
 
   /* USER CODE END WHILE */
-    MX_USB_HOST_Process();
+
 
   /* USER CODE BEGIN 3 */
 
