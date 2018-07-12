@@ -306,16 +306,31 @@ float audioTickR(float audioIn)
 
 void buttonWasPressed(VocodecButton button)
 {
+	int modex = (int) mode;
 	if (button == ButtonUp)
 	{
-		mode++;
-		if (mode >= ModeNil) mode = 3;
+		modex++;
+		if (modex >= ModeNil) modex = 3;
 	}
 	else if (button == ButtonDown)
 	{
-		mode--;
-		if (mode < FormantShiftMode) mode = 0;
+		modex--;
+		if ((int)modex < 0) modex = 0;
 	}
+
+	mode = (VocodecMode) modex;
+
+
+	ssd1306_display_full_buffer();
+	GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
+	GFXsetCursor(&theGFX, 0,13);
+	GFXwrite(&theGFX,'M');
+	GFXwrite(&theGFX,'O');
+	GFXwrite(&theGFX,'D');
+	GFXwrite(&theGFX,'E');
+
+	GFXwrite(&theGFX,' ');
+	GFXwrite(&theGFX,(char)((int)mode+48));
 
 
 }

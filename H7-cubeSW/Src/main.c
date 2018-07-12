@@ -64,7 +64,6 @@
 
 /* USER CODE BEGIN Includes */
 #include "audiostream.h"
-#include "gfx.h"
 #include "ssd1306.h"
 #include "oled.h"
 #include "custom_fonts.h"
@@ -193,17 +192,16 @@ int main(void)
   GFXsetFont(&theGFX, &Lato_Hairline_16);
   GFXsetTextColor(&theGFX, 1, 0);
   GFXsetTextSize(&theGFX, 1);
+
+  GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
   GFXsetCursor(&theGFX, 0,13);
-  GFXwrite(&theGFX,'1');
-  GFXwrite(&theGFX,' ');
-  GFXwrite(&theGFX,' ');
-  GFXwrite(&theGFX,'V');
-  GFXwrite(&theGFX,'O');
-  GFXwrite(&theGFX,'C');
+  GFXwrite(&theGFX,'M');
   GFXwrite(&theGFX,'O');
   GFXwrite(&theGFX,'D');
   GFXwrite(&theGFX,'E');
-  GFXwrite(&theGFX,'R');
+
+  GFXwrite(&theGFX,' ');
+  GFXwrite(&theGFX,(char)(mode+48));
   //GFXsetCursor(&theGFX, 100,16);
   //GFXwriteFastHLine(&theGFX, 0, 24,
           //128, 1);
@@ -246,47 +244,12 @@ int main(void)
 	  //__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, counter); //led1
 	  //__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, counter); //led4
 	  //__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, counter); //led3
-	  counter++;
-	  if (counter > 127)
-	  {
-		  counter = 0;
-	  }
-
 	  MX_USB_HOST_Process();
 
+
+
+
 #if 0
-	  GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
-	  GFXsetCursor(&theGFX, 0,13);
-	  GFXwrite(&theGFX,'M');
-	  GFXwrite(&theGFX,'O');
-	  GFXwrite(&theGFX,'D');
-	  GFXwrite(&theGFX,'E');
-
-	  GFXwrite(&theGFX,' ');
-	  GFXwrite(&theGFX,(char)(mode+48));
-
-	  /*
-	  for (int i = 0; i < 4; i++)
-	  {
-		  GFXwrite(&theGFX, (buttonValues[i] == 1) ? '1' : '0');
-		  GFXwrite(&theGFX,' ');
-	  }
-	  */
-
-	  //HAL_Delay(1);
-	  /*
-	  GFXwriteFastHLine(&theGFX, 0, 24, 128, 0);
-	  GFXwriteFastHLine(&theGFX, 0, 24, (uint8_t)( myAmplitude * 128.0f), 1);
-
-	  GFXwriteFastHLine(&theGFX, 0, 25, 128, 0);
-	  GFXwriteFastHLine(&theGFX, 0, 25, (uint8_t)( myAmplitude * 128.0f), 1);
-
-	  GFXwriteFastHLine(&theGFX, 0, 26, 128, 0);
-	  GFXwriteFastHLine(&theGFX, 0, 26, (uint8_t)( myAmplitude * 128.0f), 1);
-
-	  GFXwriteFastHLine(&theGFX, 0, 26, 128, 0);
-	  GFXwriteFastHLine(&theGFX, 0, 26, (uint8_t)( myAmplitude * 128.0f), 1);
-	  */
 	  GFXfillRect(&theGFX, 0, 16, 128, 16, 0);
 	  int repeat = (128 / AUDIO_FRAME_SIZE);
 	  float ratio = AUDIO_FRAME_SIZE*INV_TWO_TO_7;
@@ -298,31 +261,12 @@ int main(void)
 		 idx = (int)(buffer_offset + ((int)(((i / repeat) * 2) * ratio)));
 		 GFXwritePixel(&theGFX, i, (uint16_t) (((float)audioOutBuffer[idx] * INV_TWO_TO_15 * 8.0f) + 24.0f), 1);
 	  }
-	  ssd1306_display_full_buffer();
+#endif
+
 	  //buffer[counter] = (uint8_t)(randomNumber() * 255.0f);
 
 	  //oled_putxy(counter,0,&ball);
 	  //ssd1306_display_full_buffer();
-
-
-/*
-	  if (counter > 1000)
-		{
-			if (pinValue == 0)
-			{
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
-				pinValue = 1;
-			}
-			else
-			{
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
-				pinValue = 0;
-			}
-			counter = 0;
-		}
-		counter++;
-		*/
-#endif
 
   /* USER CODE END WHILE */
 
