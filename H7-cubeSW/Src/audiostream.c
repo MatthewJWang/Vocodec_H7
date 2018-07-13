@@ -34,6 +34,8 @@ uint8_t audioInCV = 0;
 uint8_t audioInCVAlt = 0;
 float myVol = 0.0f;
 
+int lock;
+
 float audioTickL(float audioIn); 
 float audioTickR(float audioIn);
 void buttonCheck(void);
@@ -59,7 +61,8 @@ int cur_read_block = 2, cur_write_block = 0;
 float desPitchRatio = 2.0f;
 
 float notePeriods[128];
-int chordArray[12] = {1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0};
+int chordArray[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int lockArray[12];
 
 int hopSize = 64, windowSize = 64;
 float max, timeConstant = 100, envout, deltamax, radius;
@@ -75,14 +78,61 @@ typedef enum BOOL {
 } BOOL;
 
 
+void noteOn(int key, int velocity)
+{
+	if (!velocity)
+	{
+		//myVol = 0.0f;
+
+		if (chordArray[key%12] > 0) chordArray[key%12]--;
+
+		tPolyNoteOff(poly, key);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
+
+
+	}
+	else
+	{
+		chordArray[key%12]++;
+
+		tPolyNoteOn(poly, key, velocity);
+		for (int i = 0; i < NUM_VOICES; i++)
+		{
+			float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
+			tSawtoothSetFreq(osc[i], freq);
+		}
+
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET);    //LED3
+	}
+}
+
+void noteOff(int key, int velocity)
+{
+	myVol = 0.0f;
+
+	if (chordArray[key%12] > 0) chordArray[key%12]--;
+
+	tPolyNoteOff(poly, key);
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
+}
+
+void ctrlInput(int ctrl, int value)
+{
+
+}
+
 float nearestPeriod(float period)
 {
 	float leastDifference = fabsf(period - notePeriods[0]);
 	float difference;
-	int index;
+	int index = -1;
+
+	int* chord = chordArray;
+	if (lock > 0) chord = lockArray;
+
 	for(int i = 0; i < 128; i++)
 	{
-		if(chordArray[i%12] == 1)
+		if (chord[i%12] > 0)
 		{
 			difference = fabsf(period - notePeriods[i]);
 			if(difference < leastDifference)
@@ -92,6 +142,9 @@ float nearestPeriod(float period)
 			}
 		}
 	}
+
+	if (index == -1) return period;
+
 	return notePeriods[index];
 }
 
@@ -182,10 +235,8 @@ float tempVal = 0.0f;
 uint16_t frameCounter = 0;
 int numSamples = AUDIO_FRAME_SIZE;
 
-void audioFrame()
+void audioFrame(void)
 {
-	buttonCheck();
-
 	uint16_t i = 0;
 
 	for (int cc=0; cc < numSamples; cc++)
@@ -305,17 +356,35 @@ float audioTickR(float audioIn)
 	return audioIn;
 }
 
+
+void writeStringToLCD(char* string, int len, int line, int space)
+{
+	GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
+	for (int i = 0; i < len; ++i)
+	{
+
+	}
+}
+
+#define ASCII_NUM_OFFSET 48
 static void writeModeToLCD(VocodecMode in)
 {
 	GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
-	GFXsetCursor(&theGFX, 0,13);
+	GFXsetCursor(&theGFX, 4,15);
+
 	GFXwrite(&theGFX,'M');
 	GFXwrite(&theGFX,'O');
 	GFXwrite(&theGFX,'D');
 	GFXwrite(&theGFX,'E');
 
 	GFXwrite(&theGFX,' ');
-	GFXwrite(&theGFX,(char)((int)in+48));
+	GFXwrite(&theGFX,(char)((int)in+ASCII_NUM_OFFSET));
+
+	if ((in == AutotuneMode) && (lock > 0))
+	{
+		GFXwrite(&theGFX,' ');
+		GFXwrite(&theGFX, 'L');
+	}
 
 	ssd1306_display_full_buffer();
 }
@@ -333,6 +402,35 @@ void buttonWasPressed(VocodecButton button)
 	{
 		modex--;
 		if ((int)modex < 0) modex = 0;
+	}
+	else if (button == ButtonA)
+	{
+
+	}
+	else if (button == ButtonB)
+	{
+		int notesHeld= 0;
+		for (int i = 0; i < 12; ++i)
+		{
+			if (chordArray[i] > 0) { notesHeld = 1; }
+		}
+
+		if (lock > 0)
+		{
+			lock = 0;
+		}
+		else
+		{
+			if (notesHeld)
+			{
+				for (int i = 0; i < 12; ++i)
+				{
+					lockArray[i] = chordArray[i];
+				}
+			}
+
+			lock = 1;
+		}
 	}
 
 	mode = (VocodecMode) modex;

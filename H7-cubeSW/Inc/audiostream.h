@@ -44,6 +44,7 @@ uint8_t buttonValues[NUM_BUTTONS];
 uint8_t buttonValuesPrev[NUM_BUTTONS];
 uint32_t buttonCounters[NUM_BUTTONS];
 uint32_t buttonPressed[NUM_BUTTONS];
+extern int chordArray[12];
 
 extern float testFreq;
 extern uint8_t buttonAPressed;
@@ -56,6 +57,17 @@ extern float noteperiod;
 tSawtooth* osc[NUM_VOICES];
 tPoly* poly;
 tTalkbox* vocoder;
+
+// MIDI FUNCTIONS
+void noteOn(int key, int velocity);
+void noteOff(int key, int velocity);
+void ctrlInput(int ctrl, int value);
+
+typedef struct _String
+{
+	char* str;
+	int len;
+} String;
 
 
 /* Exported types ------------------------------------------------------------*/

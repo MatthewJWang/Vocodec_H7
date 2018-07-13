@@ -189,12 +189,13 @@ int main(void)
   //oled_bigdigit(0, 6, 5) ;
   GFXinit(&theGFX, 128, 32);
 
-  GFXsetFont(&theGFX, &Lato_Hairline_16);
+  GFXsetFont(&theGFX, &Monospaced_plain_18);
+
   GFXsetTextColor(&theGFX, 1, 0);
   GFXsetTextSize(&theGFX, 1);
 
   GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
-  GFXsetCursor(&theGFX, 0,13);
+  GFXsetCursor(&theGFX, 0,15);
   GFXwrite(&theGFX,'M');
   GFXwrite(&theGFX,'O');
   GFXwrite(&theGFX,'D');
@@ -245,7 +246,7 @@ int main(void)
 	  //__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, counter); //led4
 	  //__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, counter); //led3
 	  MX_USB_HOST_Process();
-
+	  buttonCheck(); // should happen here, not frame, or else interrupts audio processing
 
 
 

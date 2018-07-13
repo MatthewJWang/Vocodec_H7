@@ -82,34 +82,15 @@ void ProcessReceivedMidiDatas(uint32_t myLength)
 				case (0x80): // Note Off
 					key = pack.evnt1;
 					velocity = pack.evnt2;
+
+					noteOff(key, velocity);
 				
-					myVol = 0.0f;
-					tPolyNoteOff(poly, key);
-					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
 					break;
 				case (0x90): // Note On
 					key = pack.evnt1;
 					velocity = pack.evnt2;
 
-					if (!velocity)
-					{
-						//myVol = 0.0f;
-						tPolyNoteOff(poly, key);
-						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
-					}
-					else
-					{
-						tPolyNoteOn(poly, key, velocity);
-						for (int i = 0; i < NUM_VOICES; i++)
-						{
-							float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
-							tSawtoothSetFreq(osc[i], freq);
-						}
-
-
-						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET);    //LED3
-					}
-
+					noteOn(key, velocity);
 
 					break;
 				case (0xA0):
