@@ -261,12 +261,14 @@ int main(void)
 		 idx = (int)(buffer_offset + ((int)(((i / repeat) * 2) * ratio)));
 		 GFXwritePixel(&theGFX, i, (uint16_t) (((float)audioOutBuffer[idx] * INV_TWO_TO_15 * 8.0f) + 24.0f), 1);
 	  }
-#endif
 
+
+#endif
+	  //ssd1306_display_full_buffer();
 	  //buffer[counter] = (uint8_t)(randomNumber() * 255.0f);
 
 	  //oled_putxy(counter,0,&ball);
-	  //ssd1306_display_full_buffer();
+	  //
 
   /* USER CODE END WHILE */
 

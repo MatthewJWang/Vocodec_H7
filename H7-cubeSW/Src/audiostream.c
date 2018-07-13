@@ -267,7 +267,8 @@ void audioFrame()
 					sample += tSawtoothTick(osc[i]);
 				}
 			}
-			sample *= .25f;
+
+			sample *= 0.25f;
 
 			sample = tTalkboxTick(vocoder, sample, inBuffer[(cur_read_block*numSamples)+cc]);
 			sample = OOPS_softClip(sample, 0.98f);
@@ -304,9 +305,25 @@ float audioTickR(float audioIn)
 	return audioIn;
 }
 
+static void writeModeToLCD(VocodecMode in)
+{
+	GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
+	GFXsetCursor(&theGFX, 0,13);
+	GFXwrite(&theGFX,'M');
+	GFXwrite(&theGFX,'O');
+	GFXwrite(&theGFX,'D');
+	GFXwrite(&theGFX,'E');
+
+	GFXwrite(&theGFX,' ');
+	GFXwrite(&theGFX,(char)((int)in+48));
+
+	ssd1306_display_full_buffer();
+}
+
 void buttonWasPressed(VocodecButton button)
 {
 	int modex = (int) mode;
+
 	if (button == ButtonUp)
 	{
 		modex++;
@@ -320,19 +337,7 @@ void buttonWasPressed(VocodecButton button)
 
 	mode = (VocodecMode) modex;
 
-
-	ssd1306_display_full_buffer();
-	GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
-	GFXsetCursor(&theGFX, 0,13);
-	GFXwrite(&theGFX,'M');
-	GFXwrite(&theGFX,'O');
-	GFXwrite(&theGFX,'D');
-	GFXwrite(&theGFX,'E');
-
-	GFXwrite(&theGFX,' ');
-	GFXwrite(&theGFX,(char)((int)mode+48));
-
-
+	writeModeToLCD(mode);
 }
 
 void buttonWasReleased(VocodecButton button)
