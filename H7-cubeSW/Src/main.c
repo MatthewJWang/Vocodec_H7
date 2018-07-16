@@ -193,16 +193,22 @@ int main(void)
 
   GFXsetTextColor(&theGFX, 1, 0);
   GFXsetTextSize(&theGFX, 1);
-
+  /*
   GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
   GFXsetCursor(&theGFX, 0,15);
-  GFXwrite(&theGFX,'M');
-  GFXwrite(&theGFX,'O');
-  GFXwrite(&theGFX,'D');
-  GFXwrite(&theGFX,'E');
-
-  GFXwrite(&theGFX,' ');
-  GFXwrite(&theGFX,(char)(mode+48));
+  GFXwrite(&theGFX,'P');
+  GFXwrite(&theGFX,'I');
+  GFXwrite(&theGFX,'T');
+  GFXwrite(&theGFX,'C');
+  GFXwrite(&theGFX,'H');
+  GFXwrite(&theGFX,'S');
+  GFXwrite(&theGFX,'H');
+  GFXwrite(&theGFX,'I');
+  GFXwrite(&theGFX,'F');
+  GFXwrite(&theGFX,'T');
+  */
+  OLEDwriteLine("Pitchshift", 10, FirstLine);
+  //OLEDwriteFixedFloatLine(8.463f, 4, 3, FirstLine);
   //GFXsetCursor(&theGFX, 100,16);
   //GFXwriteFastHLine(&theGFX, 0, 24,
           //128, 1);
@@ -246,10 +252,15 @@ int main(void)
 	  //__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, counter); //led4
 	  //__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, counter); //led3
 	  MX_USB_HOST_Process();
-	  buttonCheck(); // should happen here, not frame, or else interrupts audio processing
+	  //buttonCheck(); // should happen here, not frame, or else interrupts audio processing
 
 
-
+	  if (counter >= 400)
+	  {
+		  OLEDwriteFixedFloatLine(pitchFactor, 9, 2, SecondLine);
+		  counter = 0;
+	  }
+	  counter++;
 #if 0
 	  GFXfillRect(&theGFX, 0, 16, 128, 16, 0);
 	  int repeat = (128 / AUDIO_FRAME_SIZE);

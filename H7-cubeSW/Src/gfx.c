@@ -829,3 +829,120 @@ void GFXinvertDisplay(GFX* myGFX, uint8_t i) {
     // Do nothing, must be subclassed if supported by hardware
 }
 
+uint8_t pitches[24] =
+{
+	'C', ' ',
+	'C', '#',
+	'D', ' ',
+	'D', '#',
+	'E', ' ',
+	'F', ' ',
+	'F', '#',
+	'G', ' ',
+	'G', '#',
+	'A', ' ',
+	'A', '#',
+	'B', ' '
+};
+
+int OLEDparseInt(uint8_t* buffer, uint32_t myNumber, uint8_t numDigits)
+{
+	for (int i = 0; i < numDigits; i++)
+	{
+		int whichPlace = (uint32_t)(powf(10.0f,(numDigits - 1) - i));
+		int thisDigit = (myNumber / whichPlace);
+		buffer[i] = thisDigit + 48;
+		myNumber -= thisDigit * whichPlace;
+	}
+
+	return numDigits;
+}
+
+int OLEDparsePitch(uint8_t* buffer, float midi)
+{
+	int pclass, octave, note, neg = 0; float offset;
+
+	note = (int)midi;
+	offset = midi - note;
+
+	if ((midi + 0.5f) > (note+1))
+	{
+		note += 1;
+		offset = (1.0f - offset) + 0.01f;
+		neg = 1;
+	}
+
+	pclass = (note % 12);
+	octave = (int)(note / 12) - 1;
+
+	int idx = 0;
+
+	buffer[idx++] = pitches[pclass*2];
+	buffer[idx++] = pitches[pclass*2+1];
+
+	OLEDparseInteger(&buffer[idx++], octave, 1);
+
+	buffer[idx++] = ' ';
+
+	if (neg == 1)
+		buffer[idx++] = '-';
+	else
+		buffer[idx++] = '+';
+
+	OLEDparseInteger(&buffer[idx], (uint32_t) (offset * 100.0f), 2);
+
+	return idx+2;
+}
+
+int OLEDparseFixedFloat(uint8_t* buffer, float input, uint8_t numDigits, uint8_t numDecimal)
+{
+	int nonzeroHasHappened = 0, decimalHasHappened = 0;
+
+	uint32_t myNumber = (uint32_t)(input * powf(10.0f, numDecimal));
+
+	int idx = 0, i = 0;
+
+	while (i < numDigits)
+	{
+		if ((decimalHasHappened == 0) && ((numDigits-i) == numDecimal))
+		{
+			if (nonzeroHasHappened == 0)
+			{
+				buffer[idx-1] = '0';
+				nonzeroHasHappened = 1;
+			}
+
+			buffer[idx++] = '.';
+			decimalHasHappened = 1;
+		}
+		else
+		{
+
+			int whichPlace = (uint32_t) powf(10.0f,(numDigits - 1 - i));
+			int thisDigit = (myNumber / whichPlace);
+
+			if (nonzeroHasHappened == 0)
+			{
+				if (thisDigit > 0)
+				{
+					buffer[idx++] = thisDigit + 48;
+					nonzeroHasHappened = 1;
+				}
+				else
+				{
+					buffer[idx++] = ' ';
+				}
+			}
+			else
+			{
+				buffer[idx++] = thisDigit + 48;
+			}
+
+			myNumber -= thisDigit * whichPlace;
+
+			i++;
+		}
+	}
+
+	return idx;
+}

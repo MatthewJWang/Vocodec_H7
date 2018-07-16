@@ -28,6 +28,7 @@ uint16_t buffer_offset = 0;
 float sample = 0.0f;
 float noteperiod;
 float adcx[8];
+float pitchFactor;
 
 float detuneMax = 16.0f;
 uint8_t audioInCV = 0;
@@ -245,86 +246,30 @@ void audioFrame(void)
 		//inBuffer[(cur_read_block*numSamples)+cc] = tSawtoothTick(osc[0]);
 	}
 
-	if (mode == FormantShiftMode)
-	{
-		tFormantShifter_ioSamples(fs, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples, adcVals[1]*INV_TWO_TO_16*4.0f-2.0f);
+	float  period, frequency, difference;
 
-		for (int cc=0; cc < numSamples; cc++)
-		{
-			audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * TWO_TO_15);
-		}
+	tEnvProcessBlock(env, &inBuffer[cur_read_block*numSamples]);
+	if (attackDetect()==TRUE)
+	{
+		tSOLAD_setReadLag(sola, oops.blockSize);
 	}
-	else if (mode == PitchShiftMode)
+
+	// tSNAC period detection
+	tSNAC_ioSamples(snac, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
+
+	period = tSNAC_getPeriod(snac);
+
+	tSOLAD_setPeriod(sola, period);
+
+	pitchFactor = (adcVals[1] * INV_TWO_TO_16) * 3.5f + 0.5f;
+
+	tSOLAD_setPitchFactor(sola, pitchFactor);
+
+	tSOLAD_ioSamples(sola, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
+
+	for (int cc=0; cc < numSamples; cc++)
 	{
-		float  period, frequency, difference;
-
-		tEnvProcessBlock(env, &inBuffer[cur_read_block*numSamples]);
-		if (attackDetect()==TRUE)
-		{
-			tSOLAD_setReadLag(sola, oops.blockSize);
-		}
-
-		// tSNAC period detection
-		tSNAC_ioSamples(snac, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
-
-		period = tSNAC_getPeriod(snac);
-
-		tSOLAD_setPeriod(sola, period);
-
-		tSOLAD_setPitchFactor(sola, (adcVals[1] * INV_TWO_TO_16) * 3.5f + 0.5f);
-
-		tSOLAD_ioSamples(sola, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
-
-		for (int cc=0; cc < numSamples; cc++)
-		{
-			audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (tHighpassTick(hp, outBuffer[cur_write_block*numSamples+cc]) * TWO_TO_15);
-		}
-	}
-	else if (mode == AutotuneMode)
-	{
-		float  period, frequency, difference;
-
-		tEnvProcessBlock(env, &inBuffer[cur_read_block*numSamples]);
-		if (attackDetect()==TRUE)
-		{
-			tSOLAD_setReadLag(sola, oops.blockSize);
-		}
-
-		// tSNAC period detection
-		tSNAC_ioSamples(snac, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
-
-		period = tSNAC_getPeriod(snac);
-
-		tSOLAD_setPeriod(sola, period);
-
-		tSOLAD_setPitchFactor(sola, (period*oops.invSampleRate)/nearestPeriod(period*oops.invSampleRate));
-
-		tSOLAD_ioSamples(sola, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
-
-		for (int cc=0; cc < numSamples; cc++)
-		{
-			audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (tHighpassTick(hp, outBuffer[cur_write_block*numSamples+cc]) * TWO_TO_15);
-		}
-	}
-	if (mode == VocoderMode)
-	{
-		float sample = 0;
-		for (int cc=0; cc < numSamples; cc++)
-		{
-			for (int i = 0; i < NUM_VOICES; i++)
-			{
-				if (tPolyGetMidiNote(poly, i)->on == OTRUE)
-				{
-					sample += tSawtoothTick(osc[i]);
-				}
-			}
-
-			sample *= 0.25f;
-
-			sample = tTalkboxTick(vocoder, sample, inBuffer[(cur_read_block*numSamples)+cc]);
-			sample = OOPS_softClip(sample, 0.98f);
-			audioOutBuffer[buffer_offset + (cc*2)]  = (int16_t)(sample * TWO_TO_15);
-		}
+		audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (tHighpassTick(hp, outBuffer[cur_write_block*numSamples+cc]) * TWO_TO_15);
 	}
 
 	cur_read_block++;
@@ -334,8 +279,6 @@ void audioFrame(void)
 	cur_write_block++;
 	if (cur_write_block >= TOTAL_BUFFERS)
 		cur_write_block=0;
-
-
 }
 
 float currentFreq = 1.0f;

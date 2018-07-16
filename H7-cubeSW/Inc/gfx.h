@@ -12,7 +12,6 @@
 #include "gfx_font.h"
 #include "ssd1306.h"
 
-
 typedef struct _GFX
 {
 	int16_t WIDTH;
@@ -110,6 +109,10 @@ void   GFXwrite(GFX* myGfx, uint8_t);
   void GFXcharBounds(GFX* myGfx, char c, int16_t *x, int16_t *y,
       int16_t *minx, int16_t *miny, int16_t *maxx, int16_t *maxy);
 
+int OLEDparseInt(uint8_t* buffer, uint32_t myNumber, uint8_t numDigits);
 
+int OLEDparsePitch(uint8_t* buffer, float midi);
+
+int OLEDparseFixedFloat(uint8_t* buffer, float input, uint8_t numDigits, uint8_t numDecimal);
 
 #endif /* GFX_H_ */

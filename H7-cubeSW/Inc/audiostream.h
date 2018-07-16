@@ -31,6 +31,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
 #include "gfx.h"
+#include "ui.h"
 
 #include "OOPS.h"
 
@@ -54,6 +55,7 @@ extern float myVol;
 extern uint16_t buffer_offset;
 extern int16_t audioOutBuffer[AUDIO_BUFFER_SIZE];
 extern float noteperiod;
+extern float pitchFactor;
 tSawtooth* osc[NUM_VOICES];
 tPoly* poly;
 tTalkbox* vocoder;
