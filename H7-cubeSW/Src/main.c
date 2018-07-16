@@ -97,6 +97,20 @@ GFX theGFX;
 
 uint8_t ball[]  = {0x00, 0x3C, 0x7E, 0x7E, 0x7E, 0x7E, 0x3C, 0x00};
 static unsigned char testblock[] = {0x00, 0x7C, 0x7E, 0x0B, 0x0B, 0x7E, 0x7C, 0x00};
+
+char* formantEmojis[9] =
+{
+	":O        ",
+	" :0       ",
+	"  :o      ",
+	"   :o     ",
+	"    :*    ",
+	"     :|   ",
+	"      :|  ",
+	"       :) ",
+	"        :D"
+};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -207,7 +221,7 @@ int main(void)
   GFXwrite(&theGFX,'F');
   GFXwrite(&theGFX,'T');
   */
-  OLEDwriteLine("Pitchshift", 10, FirstLine);
+  OLEDwriteLine("FORMANT   ", 10, FirstLine);
   //OLEDwriteFixedFloatLine(8.463f, 4, 3, FirstLine);
   //GFXsetCursor(&theGFX, 100,16);
   //GFXwriteFastHLine(&theGFX, 0, 24,
@@ -252,12 +266,20 @@ int main(void)
 	  //__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, counter); //led4
 	  //__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, counter); //led3
 	  MX_USB_HOST_Process();
-	  //buttonCheck(); // should happen here, not frame, or else interrupts audio processing
 
 
-	  if (counter >= 400)
+	  if (counter >= 200)
 	  {
-		  OLEDwriteFixedFloatLine(pitchFactor, 9, 2, SecondLine);
+		  if (mode == FormantShiftMode)
+		  {
+			  int emojiIndex = (int)(formantShiftFactor * 9);
+			  OLEDwriteLine(formantEmojis[emojiIndex], 10, SecondLine);
+		  }
+		  else if (mode == PitchShiftMode)
+		  {
+			  OLEDwriteFixedFloatLine(pitchFactor, 9, 2, SecondLine);
+		  }
+		  buttonCheck(); // should happen here, not frame, or else interrupts audio processing
 		  counter = 0;
 	  }
 	  counter++;

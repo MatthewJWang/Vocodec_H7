@@ -56,6 +56,7 @@ extern uint16_t buffer_offset;
 extern int16_t audioOutBuffer[AUDIO_BUFFER_SIZE];
 extern float noteperiod;
 extern float pitchFactor;
+extern float formantShiftFactor;
 tSawtooth* osc[NUM_VOICES];
 tPoly* poly;
 tTalkbox* vocoder;
