@@ -41,162 +41,27 @@ float audioTickL(float audioIn);
 float audioTickR(float audioIn);
 void buttonCheck(void);
 
-tSNAC* snac;
-tSOLAD* sola;
-tEnv* env;
+tPitchShifter* ps;
+tPitchShifter* ps2;
 
-tHighpass* hp;
-tFormantShifter* fs;
-tFormantShifter* fs2;
 float inBuffer[4096];
 float outBuffer[4096];
+float outBuffer2[4096];
 
-VocodecMode mode = FormantShiftMode;
+VocodecMode mode = PitchShiftMode;
 
-
-/* PSHIFT vars *************/
-float lastmax;
-int fba = 20;
 int cur_read_block = 2, cur_write_block = 0;
-
-float desPitchRatio = 2.0f;
-
-float notePeriods[128];
-int chordArray[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-int lockArray[12];
-
-int hopSize = 64, windowSize = 64;
-float max, timeConstant = 100, envout, deltamax, radius;
 /**********************************************/
 
 
 HAL_StatusTypeDef transmit_status;
 HAL_StatusTypeDef receive_status;
 
-typedef enum BOOL {
-	FALSE = 0,
-	TRUE
-} BOOL;
-
-
-void noteOn(int key, int velocity)
-{
-	if (!velocity)
-	{
-		//myVol = 0.0f;
-
-		if (chordArray[key%12] > 0) chordArray[key%12]--;
-
-		tPolyNoteOff(poly, key);
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
-
-
-	}
-	else
-	{
-		chordArray[key%12]++;
-
-		tPolyNoteOn(poly, key, velocity);
-		for (int i = 0; i < NUM_VOICES; i++)
-		{
-			float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
-			tSawtoothSetFreq(osc[i], freq);
-		}
-
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET);    //LED3
-	}
-}
-
-void noteOff(int key, int velocity)
-{
-	myVol = 0.0f;
-
-	if (chordArray[key%12] > 0) chordArray[key%12]--;
-
-	tPolyNoteOff(poly, key);
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
-}
-
-void ctrlInput(int ctrl, int value)
-{
-
-}
-
-float nearestPeriod(float period)
-{
-	float leastDifference = fabsf(period - notePeriods[0]);
-	float difference;
-	int index = -1;
-
-	int* chord = chordArray;
-	if (lock > 0) chord = lockArray;
-
-	for(int i = 0; i < 128; i++)
-	{
-		if (chord[i%12] > 0)
-		{
-			difference = fabsf(period - notePeriods[i]);
-			if(difference < leastDifference)
-			{
-				leastDifference = difference;
-				index = i;
-			}
-		}
-	}
-
-	if (index == -1) return period;
-
-	return notePeriods[index];
-}
-
-static void setTimeConstant(float tc)
-{
-    timeConstant = tc;
-    radius = exp(-1000.0f * hopSize * oops.invSampleRate / timeConstant);
-}
-
-static BOOL attackDetect(void)
-{
-    envout = tEnvTick(env);
-
-    if (envout >= 1.0f)
-    {
-        lastmax = max;
-        if (envout > max)
-        {
-            max = envout;
-        }
-        else
-        {
-            deltamax = envout - max;
-            max = max * radius;
-        }
-        deltamax = max - lastmax;
-    }
-
-    fba = fba ? (fba-1) : 0;
-
-    if (fba == 0 && (max > 60 && deltamax > 6))
-    {
-        fba = 5;
-
-        return TRUE;
-    }
-    return FALSE;
-}
-
-
 void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTypeDef* hsaiIn, RNG_HandleTypeDef* hrand, uint16_t* myADCArray)
 { 
 	// Initialize the audio library. OOPS.
 	OOPSInit(SAMPLE_RATE, HALF_BUFFER_SIZE, &randomNumber);
-	
-	for(int i = 0; i < 128; i++)
-	{
-		notePeriods[i] = 1.0f / OOPS_midiToFrequency(i);
-	}
-	fs = tFormantShifterInit();
-	fs2 = tFormantShifterInit();
+
 	//now to send all the necessary messages to the codec
 	AudioCodec_init(hi2c);
 
@@ -204,30 +69,15 @@ void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTy
 
 	adcVals = myADCArray;
 
-	poly = tPolyInit();
-
-	for (int i = 0; i < NUM_VOICES; i++)
-	{
-		osc[i] = tSawtoothInit();
-	}
-
-	vocoder = tTalkboxInit();
-
 	// set up the I2S driver to send audio data to the codec (and retrieve input as well)	
 	transmit_status = HAL_SAI_Transmit_DMA(hsaiOut, (uint8_t *)&audioOutBuffer[0], AUDIO_BUFFER_SIZE);
 	receive_status = HAL_SAI_Receive_DMA(hsaiIn, (uint8_t *)&audioInBuffer[0], AUDIO_BUFFER_SIZE);
 	
 	/* Initialize devices for pitch shifting */
-	snac = tSNAC_init(HALF_BUFFER_SIZE, DEFOVERLAP);
-	sola = tSOLAD_init();
-	env = tEnvInit(windowSize, hopSize);
-
-	hp = tHighpassInit(40.0f);
-
-	tSOLAD_setPitchFactor(sola, 2.0f);
-
-	setTimeConstant(timeConstant);
-
+	ps = tPitchShifter_init(HALF_BUFFER_SIZE);
+	ps2 = tPitchShifter_init(HALF_BUFFER_SIZE);
+	tPitchShifter_setPitchFactor(ps, 2.0f);
+	tPitchShifter_setPitchFactor(ps2, 0.5f);
 }
 
 
@@ -243,33 +93,15 @@ void audioFrame(void)
 	for (int cc=0; cc < numSamples; cc++)
 	{
 		inBuffer[(cur_read_block*numSamples)+cc] = (float) (audioInBuffer[buffer_offset+(cc*2)] * INV_TWO_TO_15 * 2);
-		//inBuffer[(cur_read_block*numSamples)+cc] = tSawtoothTick(osc[0]);
 	}
 
-	float  period, frequency, difference;
-
-	tEnvProcessBlock(env, &inBuffer[cur_read_block*numSamples]);
-	if (attackDetect()==TRUE)
-	{
-		tSOLAD_setReadLag(sola, oops.blockSize);
-	}
-
-	// tSNAC period detection
-	tSNAC_ioSamples(snac, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
-
-	period = tSNAC_getPeriod(snac);
-
-	tSOLAD_setPeriod(sola, period);
-
-	pitchFactor = (adcVals[1] * INV_TWO_TO_16) * 3.5f + 0.5f;
-
-	tSOLAD_setPitchFactor(sola, pitchFactor);
-
-	tSOLAD_ioSamples(sola, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
+	tPitchShifter_ioSamples(ps, &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
+	tPitchShifter_ioSamples(ps2, &inBuffer[cur_read_block*numSamples], &outBuffer2[cur_write_block*numSamples], numSamples);
 
 	for (int cc=0; cc < numSamples; cc++)
 	{
-		audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (tHighpassTick(hp, outBuffer[cur_write_block*numSamples+cc]) * TWO_TO_15);
+		audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * TWO_TO_15);
+		audioOutBuffer[buffer_offset + (cc*2)] += (int16_t) (outBuffer2[cur_write_block*numSamples+cc] * TWO_TO_15);
 	}
 
 	cur_read_block++;
@@ -281,10 +113,6 @@ void audioFrame(void)
 		cur_write_block=0;
 }
 
-float currentFreq = 1.0f;
-
-float rightInput = 0.0f;
-
 float audioTickL(float audioIn) 
 {
 	sample = 0.0f;
@@ -294,42 +122,9 @@ float audioTickL(float audioIn)
 
 float audioTickR(float audioIn) 
 {
-	rightInput = audioIn;
-	//sample = audioIn;
-	return audioIn;
-}
+	sample = 0.0f;
 
-
-void writeStringToLCD(char* string, int len, int line, int space)
-{
-	GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
-	for (int i = 0; i < len; ++i)
-	{
-
-	}
-}
-
-#define ASCII_NUM_OFFSET 48
-static void writeModeToLCD(VocodecMode in)
-{
-	GFXfillRect(&theGFX, 0, 0, 128, 16, 0);
-	GFXsetCursor(&theGFX, 4,15);
-
-	GFXwrite(&theGFX,'M');
-	GFXwrite(&theGFX,'O');
-	GFXwrite(&theGFX,'D');
-	GFXwrite(&theGFX,'E');
-
-	GFXwrite(&theGFX,' ');
-	GFXwrite(&theGFX,(char)((int)in+ASCII_NUM_OFFSET));
-
-	if ((in == AutotuneMode) && (lock > 0))
-	{
-		GFXwrite(&theGFX,' ');
-		GFXwrite(&theGFX, 'L');
-	}
-
-	ssd1306_display_full_buffer();
+	return sample;
 }
 
 void buttonWasPressed(VocodecButton button)
@@ -352,28 +147,7 @@ void buttonWasPressed(VocodecButton button)
 	}
 	else if (button == ButtonB)
 	{
-		int notesHeld= 0;
-		for (int i = 0; i < 12; ++i)
-		{
-			if (chordArray[i] > 0) { notesHeld = 1; }
-		}
 
-		if (lock > 0)
-		{
-			lock = 0;
-		}
-		else
-		{
-			if (notesHeld)
-			{
-				for (int i = 0; i < 12; ++i)
-				{
-					lockArray[i] = chordArray[i];
-				}
-			}
-
-			lock = 1;
-		}
 	}
 
 	mode = (VocodecMode) modex;

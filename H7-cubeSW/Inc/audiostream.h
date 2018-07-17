@@ -56,14 +56,6 @@ extern uint16_t buffer_offset;
 extern int16_t audioOutBuffer[AUDIO_BUFFER_SIZE];
 extern float noteperiod;
 extern float pitchFactor;
-tSawtooth* osc[NUM_VOICES];
-tPoly* poly;
-tTalkbox* vocoder;
-
-// MIDI FUNCTIONS
-void noteOn(int key, int velocity);
-void noteOff(int key, int velocity);
-void ctrlInput(int ctrl, int value);
 
 typedef struct _String
 {
