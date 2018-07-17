@@ -207,7 +207,7 @@ int main(void)
   GFXwrite(&theGFX,'F');
   GFXwrite(&theGFX,'T');
   */
-  OLEDwriteLine("Pitchshift", 10, FirstLine);
+  //OLEDwriteLine("Pitchshift", 10, FirstLine);
   //OLEDwriteFixedFloatLine(8.463f, 4, 3, FirstLine);
   //GFXsetCursor(&theGFX, 100,16);
   //GFXwriteFastHLine(&theGFX, 0, 24,
@@ -254,13 +254,14 @@ int main(void)
 	  MX_USB_HOST_Process();
 	  //buttonCheck(); // should happen here, not frame, or else interrupts audio processing
 
-
+	  /*
 	  if (counter >= 400)
 	  {
 		  OLEDwriteFixedFloatLine(pitchFactor, 9, 2, SecondLine);
 		  counter = 0;
 	  }
 	  counter++;
+	  */
 #if 0
 	  GFXfillRect(&theGFX, 0, 16, 128, 16, 0);
 	  int repeat = (128 / AUDIO_FRAME_SIZE);
