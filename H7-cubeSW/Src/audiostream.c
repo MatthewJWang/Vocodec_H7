@@ -48,8 +48,9 @@ float outBuffer[4096];
 tFormantShifter* fs;
 tFormantShifter* fs2;
 tPitchShifter* ps[NUM_SHIFTERS];
-tRamp* ramp[NUM_SHIFTERS];
-//tPoly* poly;
+tRamp* atRamp[NUM_SHIFTERS];
+tRamp* vRamp[NUM_VOICES];
+tPoly* poly;
 tMPoly* mpoly;
 tSawtooth* osc[NUM_VOICES];
 tTalkbox* vocoder;
@@ -93,9 +94,8 @@ void noteOn(int key, int velocity)
 
 		if (chordArray[key%12] > 0) chordArray[key%12]--;
 
-
 		voice = tMPoly_noteOff(mpoly, key);
-		if (voice >= 0) tRampSetDest(ramp[voice], 0.0f);
+		if (voice >= 0) tRampSetDest(atRamp[voice], 0.0f);
 		for (int i = 0; i < NUM_SHIFTERS; i++)
 		{
 			if (mpoly->voices[i][0] >= 0)
@@ -104,38 +104,36 @@ void noteOn(int key, int velocity)
 				absoluteFreqs[i] = freq * oops.invSampleRate;
 			}
 		}
-		/*
 		tPolyNoteOff(poly, key);
 		for (int i = 0; i < NUM_VOICES; i++)
 		{
+			if (tPolyGetMidiNote(poly, i)->on == OFALSE) tRampSetDest(vRamp[i], 0.0f);
 			float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
 			tSawtoothSetFreq(osc[i], freq);
 		}
-		*/
+
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED
 	}
 	else
 	{
 		chordArray[key%12]++;
 		tMPoly_noteOn(mpoly, key, velocity);
-		/*
-		tPolyNoteOn(poly, key, velocity);
-		for (int i = 0; i < NUM_VOICES; i++)
-		{
-			float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
-			tSawtoothSetFreq(osc[i], freq);
-		}
-		*/
 		for (int i = 0; i < NUM_SHIFTERS; i++)
 		{
 			if (mpoly->voices[i][0] >= 0)
 			{
-				tRampSetDest(ramp[i], 1.0f);
+				tRampSetDest(atRamp[i], (float)(mpoly->voices[i][1] * INV_TWO_TO_7));
 				float freq = OOPS_midiToFrequency(mpoly->voices[i][0]);
 				absoluteFreqs[i] = freq * oops.invSampleRate;
 			}
 		}
-
+		tPolyNoteOn(poly, key, velocity);
+		for (int i = 0; i < NUM_VOICES; i++)
+		{
+			if (tPolyGetMidiNote(poly, i)->on == OTRUE) tRampSetDest(vRamp[i], tPolyGetMidiNote(poly, i)->velocity * INV_TWO_TO_7 );
+			float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
+			tSawtoothSetFreq(osc[i], freq);
+		}
 
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET);    //LED3
 	}
@@ -148,9 +146,8 @@ void noteOff(int key, int velocity)
 
 	if (chordArray[key%12] > 0) chordArray[key%12]--;
 
-	//tPolyNoteOff(poly, key);
 	voice = tMPoly_noteOff(mpoly, key);
-	if (voice >= 0) tRampSetDest(ramp[voice], 0.0f);
+	if (voice >= 0) tRampSetDest(atRamp[voice], 0.0f);
 	for (int i = 0; i < NUM_SHIFTERS; i++)
 	{
 		if (mpoly->voices[i][0] >= 0)
@@ -159,13 +156,13 @@ void noteOff(int key, int velocity)
 			absoluteFreqs[i] = freq * oops.invSampleRate;
 		}
 	}
-	/*
+	tPolyNoteOff(poly, key);
 	for (int i = 0; i < NUM_VOICES; i++)
 	{
+		if (tPolyGetMidiNote(poly, i)->on == OFALSE) tRampSetDest(vRamp[i], 0.0f);
 		float freq = OOPS_midiToFrequency(tPolyGetMidiNote(poly, i)->pitch);
 		tSawtoothSetFreq(osc[i], freq);
 	}
-	*/
 	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);    //LED3
 }
 
@@ -219,12 +216,13 @@ void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTy
 
 	adcVals = myADCArray;
 
-	//poly = tPolyInit();
+	poly = tPolyInit();
 	mpoly = tMPoly_init(activeShifters);
 
 	for (int i = 0; i < NUM_VOICES; i++)
 	{
 		osc[i] = tSawtoothInit();
+		vRamp[i] = tRampInit(10.0f, 1);
 	}
 
 	vocoder = tTalkboxInit();
@@ -240,7 +238,7 @@ void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTy
 		tPitchShifter_setWindowSize(ps[i], oops.blockSize);
 		tPitchShifter_setHopSize(ps[i], 256);
 		tPitchShifter_setPitchFactor(ps[i], pitchFactors[i]);
-		ramp[i] = tRampInit(10.0f, 1);
+		atRamp[i] = tRampInit(10.0f, 1);
 	}
 }
 
@@ -335,8 +333,8 @@ void audioFrame(void)
 					// Add the output buffer to the audio output
 					for (int cc=0; cc < numSamples; cc++)
 					{
-						if (i == 0) audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(ramp[i]) * TWO_TO_15);
-						else audioOutBuffer[buffer_offset + (cc*2)] += (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(ramp[i]) * TWO_TO_15);
+						if (i == 0) audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(atRamp[i]) * TWO_TO_15);
+						else audioOutBuffer[buffer_offset + (cc*2)] += (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(atRamp[i]) * TWO_TO_15);
 					}
 				}
 				else if (wasOn[i] == 1)
@@ -351,8 +349,8 @@ void audioFrame(void)
 					// Add the output buffer to the audio output
 					for (int cc=0; cc < numSamples; cc++)
 					{
-						if (i == 0) audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(ramp[i]) * TWO_TO_15);
-						else audioOutBuffer[buffer_offset + (cc*2)] += (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(ramp[i]) * TWO_TO_15);
+						if (i == 0) audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(atRamp[i]) * TWO_TO_15);
+						else audioOutBuffer[buffer_offset + (cc*2)] += (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(atRamp[i]) * TWO_TO_15);
 					}
 				}
 				else if (i == 0)
@@ -361,7 +359,7 @@ void audioFrame(void)
 					tPitchShifter_ioSamples(ps[i], &inBuffer[cur_read_block*numSamples], &outBuffer[cur_write_block*numSamples], numSamples);
 					for (int cc=0; cc < numSamples; cc++)
 					{
-						audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(ramp[i]) * TWO_TO_15);
+						audioOutBuffer[buffer_offset + (cc*2)] = (int16_t) (outBuffer[cur_write_block*numSamples+cc] * tRampTick(atRamp[i]) * TWO_TO_15);
 					}
 				}
 			}
@@ -380,12 +378,10 @@ void audioFrame(void)
 		{
 			for (int i = 0; i < NUM_VOICES; i++)
 			{
-				/*
 				if (tPolyGetMidiNote(poly, i)->on == OTRUE)
 				{
-					sample += tSawtoothTick(osc[i]);
+					sample += tSawtoothTick(osc[i]) * tRampTick(vRamp[i]);
 				}
-				*/
 			}
 
 			sample *= 0.25f;
