@@ -272,8 +272,11 @@ int main(void)
 	  {
 		  if (mode == FormantShiftMode)
 		  {
+			  GFXfillRect(&theGFX, 0, 16, 128, 16, 0);
 			  int emojiIndex = (int)(formantShiftFactor * 9);
-			  OLEDwriteLine(formantEmojis[emojiIndex], 10, SecondLine);
+			  int pixel = (int)(formantShiftFactor * 9 * 12);
+			  if (pixel > 104) pixel = 104;
+			  OLEDwriteString(formantEmojis[emojiIndex], 10, pixel%12 , SecondLine);
 		  }
 		  else if (mode == PitchShiftMode)
 		  {

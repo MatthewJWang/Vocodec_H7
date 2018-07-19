@@ -4,7 +4,7 @@
 
 void OLEDwriteString(uint8_t* myCharArray, uint8_t arrayLength, uint8_t startCursor, OLEDLine line)
 {
-	uint8_t cursorX = (startCursor * 12) + 4;
+	uint8_t cursorX = startCursor; // (startCursor * 12) + 4
 	uint8_t cursorY = 15 + (16 * (line%2));
 	GFXsetCursor(&theGFX, cursorX, cursorY);
 	for (int i = 0; i < arrayLength; ++i)
