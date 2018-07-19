@@ -135,8 +135,4 @@ static inline float fastabs(float f)
     return alias.f;
 }
 
-
-
-
-
 #endif  // OOPSMATH_H_INCLUDED

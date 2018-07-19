@@ -322,7 +322,6 @@ float       tVocoderTick        (tVocoder* const v, float synth, float voice)
     a = voice; //speech
     b = synth; //synth
     
-    
     tmp = a - v->f[0][7]; //integrate modulator for HF band and filter bank pre-emphasis
     v->f[0][7] = a;
     a = tmp;

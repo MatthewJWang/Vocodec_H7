@@ -57,9 +57,6 @@ extern int16_t audioOutBuffer[AUDIO_BUFFER_SIZE];
 extern float noteperiod;
 extern float pitchFactor;
 extern float formantShiftFactor;
-tSawtooth* osc[NUM_VOICES];
-tPoly* poly;
-tTalkbox* vocoder;
 
 // MIDI FUNCTIONS
 void noteOn(int key, int velocity);
@@ -155,7 +152,16 @@ typedef enum VocodecMode
 	ModeNil
 } VocodecMode;
 
+typedef enum AutotuneType
+{
+	NearestType = 0,
+	AbsoluteType,
+	AutotuneTypeNil
+} AutotuneType;
+
 extern VocodecMode mode;
+extern AutotuneType atType;
+extern int activeShifters;
 
 void buttonWasPressed(VocodecButton button);
 void buttonWasReleased(VocodecButton button);
