@@ -98,9 +98,9 @@ void noteOn(int key, int velocity)
 		if (voice >= 0) tRampSetDest(atRamp[voice], 0.0f);
 		for (int i = 0; i < NUM_SHIFTERS; i++)
 		{
-			if (mpoly->voices[i][0] >= 0)
+			if (tMPoly_isOn(mpoly, i) == 1)
 			{
-				float freq = OOPS_midiToFrequency(mpoly->voices[i][0]);
+				float freq = OOPS_midiToFrequency(tMPoly_getPitch(mpoly, i));
 				absoluteFreqs[i] = freq * oops.invSampleRate;
 			}
 		}
@@ -120,10 +120,10 @@ void noteOn(int key, int velocity)
 		tMPoly_noteOn(mpoly, key, velocity);
 		for (int i = 0; i < NUM_SHIFTERS; i++)
 		{
-			if (mpoly->voices[i][0] >= 0)
+			if (tMPoly_isOn(mpoly, i) == 1)
 			{
-				tRampSetDest(atRamp[i], (float)(mpoly->voices[i][1] * INV_TWO_TO_7));
-				float freq = OOPS_midiToFrequency(mpoly->voices[i][0]);
+				tRampSetDest(atRamp[i], (float)(tMPoly_getVelocity(mpoly, i) * INV_TWO_TO_7));
+				float freq = OOPS_midiToFrequency(tMPoly_getPitch(mpoly, i));
 				absoluteFreqs[i] = freq * oops.invSampleRate;
 			}
 		}
@@ -150,9 +150,9 @@ void noteOff(int key, int velocity)
 	if (voice >= 0) tRampSetDest(atRamp[voice], 0.0f);
 	for (int i = 0; i < NUM_SHIFTERS; i++)
 	{
-		if (mpoly->voices[i][0] >= 0)
+		if (tMPoly_isOn(mpoly, i) == 1)
 		{
-			float freq = OOPS_midiToFrequency(mpoly->voices[i][0]);
+			float freq = OOPS_midiToFrequency(tMPoly_getPitch(mpoly, i));
 			absoluteFreqs[i] = freq * oops.invSampleRate;
 		}
 	}
@@ -218,6 +218,7 @@ void audioInit(I2C_HandleTypeDef* hi2c, SAI_HandleTypeDef* hsaiOut, SAI_HandleTy
 
 	poly = tPolyInit();
 	mpoly = tMPoly_init(activeShifters);
+	tMPoly_setPitchGlideTime(mpoly, 10.0f);
 
 	for (int i = 0; i < NUM_VOICES; i++)
 	{
@@ -296,6 +297,7 @@ void audioFrame(void)
 	{
 		for (int cc=0; cc < numSamples; cc++)
 		{
+			tMPoly_tick(mpoly);
 			audioOutBuffer[buffer_offset + (cc*2)] = 0;
 			inBuffer[(cur_read_block*numSamples)+cc] = (float) (audioInBuffer[buffer_offset+(cc*2)] * INV_TWO_TO_15);
 			//inBuffer[(cur_read_block*numSamples)+cc] = tSawtoothTick(osc[0]);
@@ -321,7 +323,7 @@ void audioFrame(void)
 		{
 			for (int i = 0; i < activeShifters; ++i)
 			{
-				if (mpoly->voices[i][0] >= 0)
+				if (tMPoly_isOn(mpoly, i) == 1)
 				{
 					wasOn[i] = 1;
 					// Set pitch ratio each audio frame
