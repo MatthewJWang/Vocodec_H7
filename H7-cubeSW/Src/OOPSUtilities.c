@@ -1397,7 +1397,8 @@ int tMPoly_getNumVoices(tMPoly* poly)
 float tMPoly_getPitch(tMPoly* poly, uint8_t voice)
 {
     //float pitchBend = ((float)(poly->pitchBend - 8192) / 8192.0f) * poly->pitchBendAmount;
-    return tRampSample(poly->ramp[voice]);// + pitchBend;
+    //return tRampSample(poly->ramp[voice]);// + pitchBend;
+	return poly->voices[voice][0];
 }
 
 int tMPoly_getVelocity(tMPoly* poly, uint8_t voice)

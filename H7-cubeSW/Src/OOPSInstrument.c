@@ -225,7 +225,7 @@ tVocoder*   tVocoderInit        (void)
     v->param[4] = 0.16f;  //envelope
     v->param[5] = 0.55f;  //filter q
     v->param[6] = 0.6667f;//freq range
-    v->param[7] = 0.33f;  //num bands
+    v->param[7] = 0.33f;  // bands
     
     tVocoderUpdate(v);
     

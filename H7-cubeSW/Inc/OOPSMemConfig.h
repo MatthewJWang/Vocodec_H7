@@ -19,8 +19,8 @@
  *                                                                                                       *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#define NUM_VOICES 5
-#define NUM_SHIFTERS 3
+#define NUM_VOICES 3
+#define NUM_SHIFTERS 2
 #define MPOLY_NUM_MAX_VOICES 16
 
 #define SHAPER1_TABLE_SIZE 65536
@@ -53,7 +53,7 @@ extern const float shaper1[SHAPER1_TABLE_SIZE];
 #define     N_TWOZERO            0
 #define     N_POLEZERO           0 + (1 * N_NEURON)
 #define     N_BIQUAD             0 + (4 * N_STIFKARP)
-#define     N_SVF                0 + 32*N_BUTTERWORTH
+#define     N_SVF                0 + (32 * N_BUTTERWORTH)
 #define     N_SVFE               0
 #define     N_HIGHPASS           0 + (1 * N_PITCHSHIFTER)
 #define     N_DELAY              0 + (14 * N_NREV) + (3 * N_PRCREV)
@@ -63,7 +63,7 @@ extern const float shaper1[SHAPER1_TABLE_SIZE];
 #define     N_ENV                0 + (1 * N_PITCHSHIFTER)
 #define     N_ADSR               0
 #define     N_ENVELOPEFOLLOW     0
-#define     N_VOCODER            0
+#define     N_VOCODER            1
 #define     N_TALKBOX            1
 #define     N_POLY               1
 #define     N_MPOLY              1
