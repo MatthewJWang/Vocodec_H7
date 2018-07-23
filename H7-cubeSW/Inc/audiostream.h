@@ -53,7 +53,7 @@ extern uint8_t doAudio;
 extern float detuneAmounts[NUM_VOICES];
 extern float myVol;
 extern uint16_t buffer_offset;
-extern int16_t audioOutBuffer[AUDIO_BUFFER_SIZE];
+extern int32_t audioOutBuffer[AUDIO_BUFFER_SIZE];
 extern float noteperiod;
 extern float pitchFactor;
 extern float formantShiftFactor;

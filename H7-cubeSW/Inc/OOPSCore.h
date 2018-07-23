@@ -237,7 +237,7 @@ typedef struct _tHighpass
 typedef struct _tRamp {
     float inc;
     float inv_sr_ms;
-		float minimum_time;
+	float minimum_time;
     float curr,dest;
     float time;
     int samples_per_tick;
@@ -599,8 +599,7 @@ typedef struct _tMPoly
     tStack* orderStack;
     
     tRamp* ramp[MPOLY_NUM_MAX_VOICES];
-    
-    float rampVals[MPOLY_NUM_MAX_VOICES];
+
     uint8_t firstReceived[MPOLY_NUM_MAX_VOICES];
     float glideTime;
     

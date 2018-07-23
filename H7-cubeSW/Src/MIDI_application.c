@@ -167,9 +167,7 @@ void ProcessReceivedMidiDatas(uint32_t myLength)
 						case (64): // sustain
 							break;
 					}
-
-
-          break;
+					break;
 				case (0xC0): // Program Change
 					break;
 				case (0xD0): // Mono Aftertouch
