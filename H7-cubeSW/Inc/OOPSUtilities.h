@@ -55,6 +55,8 @@ int                     tRampSetTime(tRamp*  const, float time);
 
 int                     tRampSetDest(tRamp*  const, float dest);
 
+int                     tRampSetVal(tRamp*  const, float val);
+
 /* Envelope Follower */
 tEnvelopeFollower*      tEnvelopeFollowerInit           (float attackThreshold, float decayCoeff);
 float                   tEnvelopeFollowerTick           (tEnvelopeFollower*  const, float x);
@@ -170,7 +172,7 @@ float tLockhartWavefolderTick(tLockhartWavefolder* const, float samp);
 
 
 // ENV~ from PD, modified for OOPS
-tEnv* tEnvInit(int windowSize, int hopSize);
+tEnv* tEnvInit(int windowSize, int hopSize, int blockSize);
 float tEnvTick (tEnv* x);
 void tEnvProcessBlock(tEnv* x, float* in);
 

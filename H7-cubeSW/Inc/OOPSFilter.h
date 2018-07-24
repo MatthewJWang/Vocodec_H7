@@ -111,11 +111,13 @@ void        tHighpassSetFreq   (tHighpass*  const, float freq);
 float       tHighpassGetFreq   (tHighpass*  const);
 
 tFormantShifter*    tFormantShifterInit     (void);
-float       tFormantShifterTick    (tFormantShifter* const, float input);
+float       tFormantShifterTick    (tFormantShifter* const, float input, float fwarp);
 void        tFormantShifter_ioSamples   (tFormantShifter* const, float* in, float* out, int size, float fwarp);
 
-tPitchShifter*    tPitchShifter_init        (int samplesPerBlock);
-void        tPitchShifter_ioSamples         (tPitchShifter* const, float* in, float* out, int size);
+tPitchShifter*    tPitchShifter_init        (float* in, float* out, int bufSize, int frameSize);
+float       tPitchShifter_tick              (tPitchShifter* const, float sample);
+float       tPitchShifterToFreq_tick        (tPitchShifter* const, float sample, float freq);
+float       tPitchShifterToFunc_tick        (tPitchShifter* const, float sample, float (*fun)(float));
 void        tPitchShifter_ioSamples_toFreq  (tPitchShifter* const, float* in, float* out, int size, float toFreq);
 void        tPitchShifter_ioSamples_toPeriod(tPitchShifter* const, float* in, float* out, int size, float toPeriod);
 void        tPitchShifter_ioSamples_toFunc  (tPitchShifter* const, float* in, float* out, int size, float (*fun)(float));

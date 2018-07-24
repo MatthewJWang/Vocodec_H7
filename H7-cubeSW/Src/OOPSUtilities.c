@@ -86,7 +86,7 @@ float dbtorms(float f)
 #if N_ENV
 
 /* ---------------- env~ - simple envelope follower. ----------------- */
-tEnv* tEnvInit(int ws, int hs)
+tEnv* tEnvInit(int ws, int hs, int bs)
 {
     tEnv* x = &oops.tEnvRegistry[oops.registryIndex[T_ENV]++];
     
@@ -105,6 +105,7 @@ tEnv* tEnvInit(int ws, int hs)
     
     x->windowSize = npoints;
     x->hopSize = period;
+    x->blockSize = bs;
     
     for (i = 0; i < MAXOVERLAP; i++) x->x_sumbuf[i] = 0;
     for (i = 0; i < npoints; i++)
@@ -116,9 +117,9 @@ tEnv* tEnvInit(int ws, int hs)
     x->x_allocforvs = INITVSTAKEN;
     
     // ~ ~ ~ dsp ~ ~ ~
-    if (x->x_period % oops.blockSize)
+    if (x->x_period % x->blockSize)
     {
-        x->x_realperiod = x->x_period + oops.blockSize - (x->x_period % oops.blockSize);
+        x->x_realperiod = x->x_period + x->blockSize - (x->x_period % x->blockSize);
     }
     else
     {
@@ -136,7 +137,7 @@ float tEnvTick (tEnv* x)
 
 void tEnvProcessBlock(tEnv* x, float* in)
 {
-    int n = oops.blockSize;
+    int n = x->blockSize;
     
     int count;
     t_sample *sump;
@@ -741,7 +742,7 @@ tRamp*    tRampInit(float time, int samples_per_tick)
     tRamp* ramp = &oops.tRampRegistry[oops.registryIndex[T_RAMP]];
     
     ramp->inv_sr_ms = 1.0f/(oops.sampleRate*0.001f);
-		ramp->minimum_time = ramp->inv_sr_ms * samples_per_tick;
+	ramp->minimum_time = ramp->inv_sr_ms * samples_per_tick;
     ramp->curr = 0.0f;
     ramp->dest = 0.0f;
 		if (time < ramp->minimum_time)
@@ -764,16 +765,14 @@ tRamp*    tRampInit(float time, int samples_per_tick)
 
 int     tRampSetTime(tRamp* const r, float time)
 {
-		if (time < r->minimum_time)
-		{
-			r->time = r->minimum_time;
-		}
-		else
-		{
-			r->time = time;
-		}
-		
+	if (time < r->minimum_time)
+	{
+		r->time = r->minimum_time;
+	}
+	else
+	{
 		r->time = time;
+	}
     r->inc = ((r->dest-r->curr)/r->time * r->inv_sr_ms) * ((float)r->samples_per_tick);
     return 0;
 }
@@ -781,6 +780,13 @@ int     tRampSetTime(tRamp* const r, float time)
 int     tRampSetDest(tRamp* const r, float dest)
 {
     r->dest = dest;
+    r->inc = ((r->dest-r->curr)/r->time * r->inv_sr_ms) * ((float)r->samples_per_tick);
+    return 0;
+}
+
+int     tRampSetVal(tRamp* const r, float val)
+{
+    r->curr = val;
     r->inc = ((r->dest-r->curr)/r->time * r->inv_sr_ms) * ((float)r->samples_per_tick);
     return 0;
 }
@@ -1191,10 +1197,10 @@ tMPoly* tMPoly_init(int numVoices)
     {
         poly->voices[i][0] = -1;
         poly->firstReceived[i] = 0;
-        poly->ramp[i] = tRampInit(1.0f, 1);
+        poly->ramp[i] = tRampInit(5.0f, 1);
     }
     
-    poly->glideTime = 1.0f;
+    poly->glideTime = 5.0f;
     
     poly->pitchBend = 64;
     poly->pitchBendAmount = 2.0f;
@@ -1210,7 +1216,7 @@ void tMPoly_tick(tMPoly* poly)
 {
     for (int i = 0; i < MPOLY_NUM_MAX_VOICES; ++i)
     {
-        poly->rampVals[i] = tRampTick(poly->ramp[i]);
+    	tRampTick(poly->ramp[i]);
     }
 }
 
@@ -1236,13 +1242,14 @@ void tMPoly_noteOn(tMPoly* poly, int note, uint8_t vel)
             {
                 if (poly->firstReceived[i] == 0)
                 {
-                    tRampSetTime(poly->ramp[i], 1.0f);
+                    tRampSetVal(poly->ramp[i], note); // can't be 1.0f, causes first note to be off pitch
                     poly->firstReceived[i] = 1;
                 }
                 else
                 {
                     tRampSetTime(poly->ramp[i], poly->glideTime);
                 }
+
                 found = OTRUE;
                 
                 poly->voices[i][0] = note;
@@ -1398,7 +1405,8 @@ int tMPoly_getNumVoices(tMPoly* poly)
 float tMPoly_getPitch(tMPoly* poly, uint8_t voice)
 {
     //float pitchBend = ((float)(poly->pitchBend - 8192) / 8192.0f) * poly->pitchBendAmount;
-    return poly->rampVals[voice];// + pitchBend;
+    return tRampSample(poly->ramp[voice]);// + pitchBend;
+	return poly->voices[voice][0];
 }
 
 int tMPoly_getVelocity(tMPoly* poly, uint8_t voice)
